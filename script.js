@@ -1,67 +1,110 @@
 //Selecting dom elements
 
-const input = document.getElementById('todo-input')
-const addBtn = document.getElementById('add-btn')
-const list = document.getElementById('todo-list')
+let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 
-const saved = localStorage.getItem('todos');
-const todos = saved? JSON.parse(saved): [];
-
-
-function saveToDos(){
-    //Save current todos array to localstorage
-    localStorage.setItem('todos', JSON.stringify(todos));
+function saveTasks(){
+    localStorage.setItem("tasks", JSON.stringify(tasks));
 }
 
+function addTask(){
 
-function addTodo(){
-    const text= input.value.trim();
-   
-    if(!text){
-        return
+    const input = document.getElementById("taskInput");
+    const text = input.value.trim();
+
+    if(text === ""){
+        alert("Please enter a task");
+        return;
     }
 
-    todos.push({text:text});
-    input.value="";
-    render();
-    saveToDos();
-}
-
-addBtn.addEventListener("click",addTodo);
-
-
-function createTodoNode(todo,index){
-const li = document.createElement('li');
-
-
-const textSpan = document.createElement("span");
-textSpan.textContent = todo.text;
-textSpan.style.margin = '0 8px';
-
-const delBtn = document.createElement('button');
-delBtn.textContent = "Delete";
-delBtn.id = "delbtn";
-delBtn.addEventListener('click', ()=>{
-    todos.splice(index,1);
-    render();
-    saveToDos();
-})
-
-li.appendChild(textSpan);
-li.appendChild(delBtn);
-
-return li;
-}
-
-
-function render(){
-    list.innerHTML = "";
-
-    todos.forEach((todo,index)=> {
-        const node = createTodoNode(todo,index);
-        list.appendChild(node)  
+    tasks.push({
+        id: Date.now(),
+        text:text,
+        status:"todo"
     });
- console.log(todos);
-}
-render();
 
+    input.value="";
+    saveTasks();
+    renderTasks();
+}
+
+function updateStatus(id,status){
+    const task = tasks.find(t=>t.id===id);
+    task.status=status;
+
+    saveTasks();
+    renderTasks();
+}
+ function deletepermanently(id) {
+    tasks = tasks.filter(task => task.id !== id);
+
+    saveTasks();
+    renderTasks();
+}
+
+function renderTasks(){
+
+    const todo=document.getElementById("todo");
+    const progress=document.getElementById("progress");
+    const completed=document.getElementById("completed");
+    const deleted=document.getElementById("deleted");
+
+    todo.innerHTML="";
+    progress.innerHTML="";
+    completed.innerHTML="";
+    deleted.innerHTML="";
+
+
+    tasks.forEach((task,index)=>{
+
+        const div=document.createElement("div");
+        div.className="task";
+
+        let buttons="";
+
+        if(task.status==="todo"){
+            buttons=`
+            <button class="start" onclick="updateStatus(${task.id},'progress')">Start</button>
+            <button class="delete" onclick="updateStatus(${task.id},'deleted')">Delete</button>
+            `;
+        }
+
+        else if(task.status==="progress"){
+            buttons=`
+            <button class="complete" onclick="updateStatus(${task.id},'completed')">Complete</button>
+            <button class="delete" onclick="updateStatus(${task.id},'deleted')">Delete</button>
+            `;
+        }
+
+        else if(task.status==="completed"){
+            buttons= `
+            <button class="delete" onclick="updateStatus(${task.id},'deleted')">Delete</button>
+            `;
+        }
+
+        else if(task.status==="deleted"){
+            buttons=`
+            <button class="restore" onclick="updateStatus(${task.id},'todo')">Restore</button>
+            <button class="deletedpermanently" onclick="deletepermanently(${task.id})">Delete Permanently</button>
+            `;
+            
+        }
+
+        div.innerHTML=`
+        <p>
+            ${task.text}
+        </p>
+        <div class="btn-group">
+            ${buttons}
+        </div>
+        `;
+
+        if(task.status==="todo") todo.appendChild(div);
+        if(task.status==="progress") progress.appendChild(div);
+        if(task.status==="completed") completed.appendChild(div);
+        if(task.status==="deleted") deleted.appendChild(div) ;
+       
+
+    });
+}
+
+renderTasks();
